@@ -3,23 +3,29 @@
 use Jdefez\Enum\Tests\Fixtures\MetaEnum;
 
 describe('Meta attribute', function () {
-    it('should return the value of the key', function () {
+    test('getMeta', function () {
         expect(MetaEnum::Active->getMeta('foo'))->toBe('foo value');
     });
 
-    // it('should return the value of the key', function () {
-    //     $meta = new Jdefez\Enum\Attributes\Meta(['foo' => 'foo value', 'bar' => 'bar value']);
-    //     expect($meta->get('foo'))->toBe('foo value');
-    //     expect($meta->get('bar'))->toBe('bar value');
-    // });
+    test('isMeta', function (string $key, string $value, bool $expected) {
+        expect(MetaEnum::Active->isMeta($key, $value))->toBe($expected);
+    })
+        ->with([
+            ['foo', 'foo value', true],
+            ['bar', 'bar value', true],
+            ['foo', 'bar value', false],
+            ['foor', 'bar value', false],
+        ]);
 
-    // it('should return null if the key does not exist', function () {
-    //     $meta = new Jdefez\Enum\Attributes\Meta(['foo' => 'foo value', 'bar' => 'bar value']);
-    //     expect($meta->get('baz'))->toBeNull();
-    // });
+    test('allMeta', function () {
+        expect(MetaEnum::Active->allMeta())->toEqualCanonicalizing([
+            'foo' => 'foo value',
+            'bar' => 'bar value',
+        ]);
+    });
 
-    // it('should return all the data', function () {
-    //     $meta = new Jdefez\Enum\Attributes\Meta(['foo' => 'foo value', 'bar' => 'bar value']);
-    //     expect($meta->all())->toBe(['foo' => 'foo value', 'bar' => 'bar value']);
-    // });
+    test('throws exception if the attribute was not found', function () {
+        MetaEnum::Active->getMetas('baz');
+    })
+        ->throws(Exception::class);
 });

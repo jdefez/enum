@@ -3,9 +3,10 @@
 namespace Jdefez\Enum\Attributes;
 
 use Attribute;
+use Jdefez\Enum\Contracts\AttributeContract;
 
 #[Attribute(Attribute::TARGET_CLASS_CONSTANT)]
-class Meta
+class Meta implements AttributeContract
 {
     /**
      * @param  array<array-key, mixed>  $data
@@ -25,5 +26,14 @@ class Meta
     public function allMeta(): array
     {
         return $this->data;
+    }
+
+    public function isMeta(string $key, mixed $value): bool
+    {
+        if (! array_key_exists($key, $this->data)) {
+            return false;
+        }
+
+        return $this->data[$key] === $value;
     }
 }

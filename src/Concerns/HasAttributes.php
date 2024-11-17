@@ -2,7 +2,9 @@
 
 namespace Jdefez\Enum\Concerns;
 
-use Jdefez\Enum\Attributes\Meta;
+use Closure;
+use Exception;
+use Jdefez\Enum\Contracts\AttributeContract;
 use ReflectionAttribute;
 use ReflectionEnumBackedCase;
 
@@ -10,29 +12,39 @@ trait HasAttributes
 {
     public function __call(string $method, mixed $args = null): mixed
     {
-        $ref = new ReflectionEnumBackedCase($this, $this->name);
+        $attributes = (new ReflectionEnumBackedCase($this, $this->name))
+            ->getAttributes(AttributeContract::class, ReflectionAttribute::IS_INSTANCEOF);
 
-        // can be filtered by interface if needed.
-        $attributes = $ref->getAttributes(Meta::class);
+        $instance = $this->find($attributes, function ($instance) use ($method) {
+            return property_exists($instance, $method);
+        });
 
-        // find the attribute that implements this method
-        $instance = $this->findAttributeInstanceByMethod($method, $attributes);
-
-        if (! $instance) {
-            // throw exception
+        if ($instance) {
+            return $instance->{$method};
         }
 
-        return $instance->$method(...$args);
+        $instance = $this->find($attributes, function ($instance) use ($method) {
+            return method_exists($instance, $method);
+        });
+
+        if ($instance) {
+            return $instance->{$method}(...$args);
+        }
+
+        throw new Exception('Attribute not found');
     }
 
     /**
      * @param  array<ReflectionAttribute>  $attributes
+     * @param  Closure(object, string): bool  $callback
      */
-    private function findAttributeInstanceByMethod(string $method, array $attributes): mixed
+    private function find(array $attributes, Closure $callback): ?object
     {
         foreach ($attributes as $attribute) {
             $instance = $attribute->newInstance();
-            if (method_exists($instance, $method)) {
+            $found = $callback($attribute->newInstance());
+
+            if ($found) {
                 return $instance;
             }
         }
