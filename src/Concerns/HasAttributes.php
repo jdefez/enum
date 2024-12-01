@@ -4,6 +4,7 @@ namespace Jdefez\Enum\Concerns;
 
 use Closure;
 use Exception;
+use Illuminate\Support\Collection;
 use Jdefez\Enum\Contracts\AttributeContract;
 use ReflectionAttribute;
 use ReflectionEnumBackedCase;
@@ -32,6 +33,34 @@ trait HasAttributes
         }
 
         throw new Exception('Attribute not found');
+    }
+
+    /**
+     * @return Collection<object{value: mixed, description: string}>
+     */
+    public static function listValuesAndDescriptions(): Collection
+    {
+        return self::collect()
+            ->map(fn ($item) => (object) [
+                'value' => $item->value,
+                'description' => $item->description(),
+            ]);
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    public static function values(): array
+    {
+        return array_map(fn ($item) => $item->value, self::cases());
+    }
+
+    /**
+     * @return Collection<BackedEnum>
+     */
+    public static function collect(): Collection
+    {
+        return new Collection(self::cases());
     }
 
     /**
