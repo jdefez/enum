@@ -45,11 +45,11 @@ trait HasAttributes
     {
         return self::collect()
             ->first(function ($item) use ($key, $value) {
-		try {
-		    return $item->getMeta($key) === $value;
-		} catch (AttributeNotFound $e) {
-		    return null;
-		}
+                try {
+                    return $item->getMeta($key) === $value;
+                } catch (AttributeNotFound $e) {
+                    return null;
+                }
             });
     }
 
