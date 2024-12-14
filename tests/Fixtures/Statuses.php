@@ -19,5 +19,6 @@ enum Statuses: string implements EnumContract
     case Deactivated = 'deactivated';
 
     #[Description('Deleted description')]
+    #[Meta(['foo' => 'hello', 'bar' => 'hi'])]
     case Deleted = 'deleted';
 }

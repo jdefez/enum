@@ -21,4 +21,8 @@ interface EnumContract
      * @return Collection<object{value: mixed, description: string}>
      */
     public static function listValuesAndDescriptions(): Collection;
+
+    public static function findByDescription(string $description): ?object;
+
+    public static function findByMeta(string $key, mixed $value): ?object;
 }

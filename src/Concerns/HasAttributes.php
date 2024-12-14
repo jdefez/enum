@@ -3,9 +3,9 @@
 namespace Jdefez\Enum\Concerns;
 
 use Closure;
-use Exception;
 use Illuminate\Support\Collection;
 use Jdefez\Enum\Contracts\AttributeContract;
+use Jdefez\Enum\Exceptions\AttributeNotFound;
 use ReflectionAttribute;
 use ReflectionEnumBackedCase;
 
@@ -32,7 +32,25 @@ trait HasAttributes
             return $instance->{$method}(...$args);
         }
 
-        throw new Exception('Attribute not found');
+        throw new AttributeNotFound('Attribute not found');
+    }
+
+    public static function findByDescription(string $description): ?object
+    {
+        return self::collect()
+            ->first(fn ($item) => $item->description() === $description);
+    }
+
+    public static function findByMeta(string $key, mixed $value): ?object
+    {
+        return self::collect()
+            ->first(function ($item) use ($key, $value) {
+		try {
+		    return $item->getMeta($key) === $value;
+		} catch (AttributeNotFound $e) {
+		    return null;
+		}
+            });
     }
 
     /**
