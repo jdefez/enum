@@ -11,25 +11,21 @@ use ReflectionEnumBackedCase;
 
 trait HasAttributes
 {
-    public function __call(string $method, mixed $args = null): mixed
+    public function __call(string $called, mixed $args = null): mixed
     {
         $attributes = (new ReflectionEnumBackedCase($this, $this->name))
             ->getAttributes(AttributeContract::class, ReflectionAttribute::IS_INSTANCEOF);
 
-        $instance = $this->find($attributes, function ($instance) use ($method) {
-            return property_exists($instance, $method);
-        });
+        $instance = $this->find($attributes, fn ($instance) => property_exists($instance, $called));
 
         if ($instance) {
-            return $instance->{$method};
+            return $instance->{$called};
         }
 
-        $instance = $this->find($attributes, function ($instance) use ($method) {
-            return method_exists($instance, $method);
-        });
+        $instance = $this->find($attributes, fn ($instance) => method_exists($instance, $called));
 
         if ($instance) {
-            return $instance->{$method}(...$args);
+            return $instance->{$called}(...$args);
         }
 
         throw new AttributeNotFound('Attribute not found');
@@ -38,7 +34,13 @@ trait HasAttributes
     public static function findByDescription(string $description): ?object
     {
         return self::collect()
-            ->first(fn ($item) => $item->description() === $description);
+            ->first(function ($item) use ($description) {
+                try {
+                    return $item->description() === $description;
+                } catch (AttributeNotFound $e) {
+                    return null;
+                }
+            });
     }
 
     public static function findByMeta(string $key, mixed $value): ?object
@@ -59,10 +61,19 @@ trait HasAttributes
     public static function listValuesAndDescriptions(): Collection
     {
         return self::collect()
-            ->map(fn ($item) => (object) [
-                'value' => $item->value,
-                'description' => $item->description(),
-            ]);
+            ->map(function ($item) {
+                try {
+                    return (object) [
+                        'value' => $item->value,
+                        'description' => $item->description(),
+                    ];
+                } catch (AttributeNotFound $e) {
+                    return (object) [
+                        'value' => $item->value,
+                        'description' => '',
+                    ];
+                }
+            });
     }
 
     /**
@@ -70,7 +81,9 @@ trait HasAttributes
      */
     public static function values(): array
     {
-        return array_map(fn ($item) => $item->value, self::cases());
+        return static::collect()
+            ->map(fn ($item) => $item->value)
+            ->toArray();
     }
 
     /**
@@ -89,7 +102,7 @@ trait HasAttributes
     {
         foreach ($attributes as $attribute) {
             $instance = $attribute->newInstance();
-            $found = $callback($attribute->newInstance());
+            $found = $callback($instance);
 
             if ($found) {
                 return $instance;
